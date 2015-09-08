@@ -24,23 +24,23 @@ class Parser
      * @var mixed
      * @access private
      */
-    private $_specialWhiteList = [
+    private $_specialWhiteList = array(
         'table' =>  'table|tbody|thead|tfoot|tr|td|th'
-    ];
+    );
 
     /**
      * _footnotes
      * 
      * @var array
      */
-    private $_footnotes = [];
+    private $_footnotes = array();
 
     /**
      * _blocks
      * 
      * @var array
      */
-    private $_blocks = [];
+    private $_blocks = array();
 
     /**
      * _current  
@@ -61,17 +61,17 @@ class Parser
      * 
      * @var array
      */
-    private $_definitions = [];
+    private $_definitions = array();
 
     /**
      * @var array
      */
-    private $_hooks = [];
+    private $_hooks = array();
 
     /**
      * @var array
      */
-    private $_holders = [];
+    private $_holders = array();
 
     /**
      * @var string
@@ -132,7 +132,7 @@ class Parser
      */
     private function initText($text)
     {
-        $text = str_replace(["\t", "\r"], ['    ', ''], $text);
+        $text = str_replace(array("\t", "\r"), array('    ', ''), $text);
         return $text;
     }
 
@@ -224,7 +224,7 @@ class Parser
             $deep ++;
         }
 
-        $this->_holders = [];
+        $this->_holders = array();
 
         return $text;
     }
@@ -259,7 +259,7 @@ class Parser
             }
         }, $text);
 
-        $text = str_replace(['<', '>'], ['&lt;', '&gt;'], $text);
+        $text = str_replace(array('<', '>'), array('&lt;', '&gt;'), $text);
 
         // footnote
         $text = preg_replace_callback("/\[\^((?:[^\]]|\\]|\\[)+?)\]/", function ($matches) {
@@ -344,7 +344,7 @@ class Parser
     private function parseBlock($text, &$lines)
     {
         $lines = explode("\n", $text);
-        $this->_blocks = [];
+        $this->_blocks = array();
         $this->_current = 'normal';
         $this->_pos = -1;
         $special = implode("|", array_keys($this->_specialWhiteList));
@@ -376,7 +376,7 @@ class Parser
                             || strlen($matches[1]) > $space;
                     }
 
-                    $this->startBlock('code', $key, [$matches[1], $matches[3], $isAfterList]);
+                    $this->startBlock('code', $key, array($matches[1], $matches[3], $isAfterList));
                 }
 
                 continue;
@@ -424,7 +424,7 @@ class Parser
                 // footnote
                 case preg_match("/^\[\^((?:[^\]]|\\]|\\[)+?)\]:/", $line, $matches):
                     $space = strlen($matches[0]) - 1;
-                    $this->startBlock('footnote', $key, [$space, $matches[1]]);
+                    $this->startBlock('footnote', $key, array($space, $matches[1]));
                     break;
 
                 // definition
@@ -479,7 +479,7 @@ class Parser
                         }
 
                         $rows = preg_split("/(\+|\|)/", $matches[1]);
-                        $aligns = [];
+                        $aligns = array();
                         foreach ($rows as $row) {
                             $align = 'none';
 
@@ -496,7 +496,7 @@ class Parser
                             $aligns[] = $align;
                         }
 
-                        $this->setBlock($key, [$head, $aligns]);
+                        $this->setBlock($key, array($head, $aligns));
                     }
                     break;
 
@@ -509,7 +509,7 @@ class Parser
 
                 // multi heading
                 case preg_match("/^\s*((=|-){2,})\s*$/", $line, $matches)
-                    && ($this->getBlock() && !preg_match("/^\s*$/", $lines[$this->getBlock()[2]])):    // check if last line isn't empty
+                    && ($a = $this->getBlock() && !preg_match("/^\s*$/", $lines[$a[2]])):    // check if last line isn't empty
                     if ($this->isBlock('normal')) {
                         $this->backBlock(1, 'mh', $matches[1][0] == '=' ? 1 : 2)
                             ->setBlock($key)
@@ -546,7 +546,8 @@ class Parser
                     } else if ($this->isBlock('footnote')) {
                         preg_match("/^(\s*)/", $line, $matches);
 
-                        if (strlen($matches[1]) >= $this->getBlock()[3][0]) {
+                        $a = $this->getBlock();
+                        if (strlen($matches[1]) >= $a[3][0]) {
                             $this->setBlock($key);
                         } else {
                             $this->startBlock('normal', $key);
@@ -616,7 +617,7 @@ class Parser
                     && !empty($prevBlock) && !empty($nextBlock)) {
                     if ($prevBlock[0] == 'list' && $nextBlock[0] == 'list') {
                         // combine 3 blocks
-                        $blocks[$key - 1] = ['list', $prevBlock[1], $nextBlock[2], NULL];
+                        $blocks[$key - 1] = array('list', $prevBlock[1], $nextBlock[2], NULL);
                         array_splice($blocks, $key, 2);
                     }
                 }
@@ -721,7 +722,7 @@ class Parser
     {
         $html = '';
         $minSpace = 99999;
-        $rows = [];
+        $rows = array();
 
         // count levels
         foreach ($lines as $key => $line) {
@@ -730,7 +731,7 @@ class Parser
                 $type = false !== strpos('+-*', $matches[2]) ? 'ul' : 'ol';
                 $minSpace = min($space, $minSpace);
 
-                $rows[] = [$space, $type, $line, $matches[4]];
+                $rows[] = array($space, $type, $line, $matches[4]);
             } else {
                 $rows[] = $line;
             }
@@ -747,7 +748,7 @@ class Parser
         $secondMinSpace = $found ?: $minSpace;
 
         $lastType = '';
-        $leftLines = [];
+        $leftLines = array();
 
         foreach ($rows as $row) {
             if (is_array($row)) {
@@ -768,7 +769,7 @@ class Parser
                         $html .= "<li>" . $this->parse(implode("\n", $leftLines)) . "</li>";
                     }
 
-                    $leftLines = [$text];
+                    $leftLines = array($text);
                     $lastType = $type;
                 }
             } else {
@@ -822,17 +823,17 @@ class Parser
                     return trim($row);
                 }
             }, explode('|', $line));
-            $columns = [];
+            $columns = array();
             $last = -1;
 
             foreach ($rows as $row) {
                 if (strlen($row) > 0) {
                     $last ++;
-                    $columns[$last] = [isset($columns[$last]) ? $columns[$last][0] + 1 : 1, $row];
+                    $columns[$last] = array(isset($columns[$last]) ? $columns[$last][0] + 1 : 1, $row);
                 } else if (isset($columns[$last])) {
                     $columns[$last][0] ++;
                 } else {
-                    $columns[0] = [1, $row];
+                    $columns[0] = array(1, $row);
                 }
             }
 
@@ -959,7 +960,7 @@ class Parser
      */
     private function escapeBracket($str)
     {
-        return str_replace(['\[', '\]', '\(', '\)'], ['[', ']', '(', ')'], $str);
+        return str_replace(array('\[', '\]', '\(', '\)'),array('[', ']', '(', ')'), $str);
     }
 
     /**
@@ -975,7 +976,7 @@ class Parser
         $this->_pos ++;
         $this->_current = $type;
 
-        $this->_blocks[$this->_pos] = [$type, $start, $start, $value];
+        $this->_blocks[$this->_pos] = array($type, $start, $start, $value);
         
         return $this;
     }
@@ -1056,7 +1057,7 @@ class Parser
         }
 
         $this->_current = $type;
-        $this->_blocks[$this->_pos] = [$type, $last - $step + 1, $last, $value];
+        $this->_blocks[$this->_pos] = array($type, $last - $step + 1, $last, $value);
 
         return $this;
     }
